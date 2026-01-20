@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RoadrunnerBD</title>
+  <style>
+    body { font-family: sans-serif; background: #fafafa; }
+    h1 { color: #4CAF50; }
+  </style>
+</head>
+<body>
+  <h1>Hello from Vercel + Supabase Edge!</h1>
+  <p>This page is served from Vercel, backend proxied to Supabase Edge.</p>
+
+  <button onclick="callBackend()">Call Supabase Edge Function</button>
+  <pre id="output"></pre>
+
+  <script>
+    async function callBackend() {
+      const res = await fetch('/api/myFunction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hello: 'world' })
+      });
+      const data = await res.json();
+      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
