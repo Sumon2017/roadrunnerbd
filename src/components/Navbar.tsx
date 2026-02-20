@@ -194,8 +194,8 @@ const Navbar: React.FC<NavbarProps> = ({ logoUrl, searchQuery, onSearchChange })
                         <ShoppingBag size={18} />
                         <span className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full"></span>
                     </button>
-                    <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
-                    <Link href="/admin/dashboard" className="hidden md:block text-zinc-500 hover:text-white transition-colors text-[9px] font-black uppercase tracking-widest">
+                    <div className="h-4 w-[1px] bg-zinc-800"></div>
+                    <Link href="/admin/dashboard" className="text-zinc-500 hover:text-white transition-colors text-[9px] font-black uppercase tracking-widest">
                         Admin
                     </Link>
                 </div>
