@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { r2Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from '@/lib/r2';
+import { r2Client, R2_BUCKET_NAME, extractR2Key } from '@/lib/r2';
 import { ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
-
-// Helper to extract the R2 key from the full public URL
-function extractR2Key(url: string): string | null {
-    if (!url) return null;
-    try {
-        const parsedUrl = new URL(url);
-        // Remove leading slash to match R2 keys (e.g. /products/file.jpg -> products/file.jpg)
-        return parsedUrl.pathname.substring(1);
-    } catch {
-        // Fallback for relative or malformed URLs
-        return url.replace(`${R2_PUBLIC_URL}/`, '');
-    }
-}
 
 export async function GET(req: NextRequest) {
     // 1. Basic Security: Check for a secret token either via Authorization header or query param.
@@ -80,11 +67,6 @@ export async function GET(req: NextRequest) {
         let continuationToken: string | undefined = undefined;
         let totalDeleted = 0;
 
-        // Define a "buffer" time: Don't delete files uploaded in the last 2 hours
-        // This prevents deleting a file an admin JUST uploaded before they clicked "Save Product"
-        const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-        const now = new Date();
-
         while (isTruncated) {
             const listCommand = new ListObjectsV2Command({
                 Bucket: R2_BUCKET_NAME,
@@ -108,16 +90,7 @@ export async function GET(req: NextRequest) {
 
                 // Check if the object is NOT in the database
                 if (!activeKeys.has(object.Key)) {
-                    // Check if the object is older than the buffer time
-                    if (object.LastModified) {
-                        const ageMs = now.getTime() - object.LastModified.getTime();
-                        if (ageMs > TWO_HOURS_MS) {
-                            keysToDelete.push({ Key: object.Key });
-                        }
-                    } else {
-                        // If no LastModified data, delete it to be safe (unlikely with R2)
-                        keysToDelete.push({ Key: object.Key });
-                    }
+                    keysToDelete.push({ Key: object.Key });
                 }
             }
 

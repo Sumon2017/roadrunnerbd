@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { r2Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from '@/lib/r2';
+import { r2Client, R2_BUCKET_NAME, extractR2Key } from '@/lib/r2';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-
-// Helper to extract the R2 key from the full public URL
-function extractR2Key(url: string): string | null {
-    if (!url || !url.startsWith(R2_PUBLIC_URL)) return null;
-    return url.replace(`${R2_PUBLIC_URL}/`, '');
-}
 
 export async function POST(req: NextRequest) {
     const adminPass = req.headers.get('admin-password');
