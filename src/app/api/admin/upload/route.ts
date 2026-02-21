@@ -18,11 +18,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         }
 
-        // 2. Storage Limit Check (Placeholder for now, can be expanded)
-        // For now, let's limit file size to 5MB
-        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        // 2. Storage Limit Check limits file size to stay under Vercel's 4.5MB payload limit
+        const MAX_SIZE = 4 * 1024 * 1024; // 4MB
         if (file.size > MAX_SIZE) {
-            return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 });
+            return NextResponse.json({ error: 'File too large (max 4MB)' }, { status: 400 });
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
