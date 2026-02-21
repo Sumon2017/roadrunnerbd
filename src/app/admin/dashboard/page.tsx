@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Package, FolderTree, AlertTriangle, LayoutDashboard, Loader2 } from 'lucide-react';
+import { Package, FolderTree, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import { supabase } from '@/lib/supabase';
 
@@ -51,9 +51,9 @@ const DashboardHome: React.FC = () => {
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto">
-                <header className="h-20 border-b border-zinc-800 flex items-center justify-between px-8">
-                    <h1 className="text-xl font-black uppercase tracking-tighter">Dashboard Overview</h1>
-                    <div className="flex items-center gap-4">
+                <header className="h-20 border-b border-zinc-800 flex items-center justify-between px-4 md:px-8 pl-16 md:pl-8">
+                    <h1 className="text-xl font-black uppercase tracking-tighter truncate">Dashboard Overview</h1>
+                    <div className="flex items-center gap-4 hidden sm:flex">
                         <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Admin Session Active</div>
                     </div>
                 </header>

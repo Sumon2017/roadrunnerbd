@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Edit2, Trash2, Plus, Package, Image as ImageIcon, Search } from 'lucide-react';
-import Link from 'next/link';
+import { Edit2, Trash2, Plus, Package, Image as ImageIcon, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductForm from '@/components/Admin/ProductForm';
 
 interface Product {
@@ -28,6 +27,11 @@ const ProductList: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const pageSize = 10;
+
+    // Scroll state
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [showLeftScroll, setShowLeftScroll] = useState(false);
+    const [showRightScroll, setShowRightScroll] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -66,6 +70,26 @@ const ProductList: React.FC = () => {
     useEffect(() => {
         fetchProducts();
     }, [page, debouncedQuery]);
+
+    // Scroll handlers
+    const handleScroll = () => {
+        if (!scrollContainerRef.current) return;
+        const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+        setShowLeftScroll(scrollLeft > 0);
+        setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 1);
+    };
+
+    useEffect(() => {
+        handleScroll();
+        window.addEventListener('resize', handleScroll);
+        return () => window.removeEventListener('resize', handleScroll);
+    }, [products]);
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (!scrollContainerRef.current) return;
+        const scrollAmount = direction === 'left' ? -300 : 300;
+        scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    };
 
     const confirmDelete = async () => {
         if (!productToDelete) return;
@@ -134,85 +158,118 @@ const ProductList: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden overflow-x-auto no-scrollbar">
-                <table className="w-full text-left min-w-[600px]">
-                    <thead className="bg-black/50 border-b border-zinc-800">
-                        <tr>
-                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Product</th>
-                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Price</th>
-                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Stock</th>
-                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Featured</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800 text-sm">
-                        {loading ? (
+            <div className="relative group">
+                {/* Left Scroll Gradient / Button */}
+                {showLeftScroll && (
+                    <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-black via-black/80 to-transparent z-20 flex items-center justify-start pointer-events-none md:hidden">
+                        <button
+                            onClick={() => scroll('left')}
+                            className="pointer-events-auto h-8 w-8 ml-2 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white hover:bg-zinc-800 transition-colors shadow-lg"
+                            aria-label="Scroll left"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                    </div>
+                )}
+
+                <div
+                    ref={scrollContainerRef}
+                    onScroll={handleScroll}
+                    className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden overflow-x-auto no-scrollbar relative z-10"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    <table className="w-full text-left min-w-[600px]">
+                        <thead className="bg-black/50 border-b border-zinc-800">
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest animate-pulse">
-                                    Loading Products...
-                                </td>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Product</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Price</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Stock</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Featured</th>
+                                <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Actions</th>
                             </tr>
-                        ) : products.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest">
-                                    No products found. Start by adding one.
-                                </td>
-                            </tr>
-                        ) : (
-                            products.map((prod) => (
-                                <tr key={prod.id} className="hover:bg-white/[0.02] transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-black border border-zinc-800 rounded-sm flex items-center justify-center overflow-hidden">
-                                                {prod.images?.[0] ? (
-                                                    /* eslint-disable-next-line @next/next/no-img-element */
-                                                    <img src={prod.images[0]} alt={prod.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <ImageIcon size={16} className="text-zinc-700" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-white uppercase tracking-tight">{prod.name}</div>
-                                                <div className="text-[10px] font-mono text-zinc-500">{prod.slug}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-white">
-                                        ৳{prod.price}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-full ${prod.stock_status ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                                            {prod.stock_status ? 'In Stock' : 'Out of Stock'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        {prod.is_featured ? (
-                                            <span className="text-amber-500 text-[10px] font-bold uppercase tracking-widest">Featured</span>
-                                        ) : (
-                                            <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">-</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-3">
-                                            <button
-                                                onClick={() => openEditForm(prod)}
-                                                className="p-2 text-zinc-500 hover:text-white transition-colors"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => setProductToDelete(prod.id)}
-                                                className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800 text-sm">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest animate-pulse">
+                                        Loading Products...
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : products.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest">
+                                        No products found. Start by adding one.
+                                    </td>
+                                </tr>
+                            ) : (
+                                products.map((prod) => (
+                                    <tr key={prod.id} className="hover:bg-white/[0.02] transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-black border border-zinc-800 rounded-sm flex items-center justify-center overflow-hidden">
+                                                    {prod.images?.[0] ? (
+                                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                                        <img src={prod.images[0]} alt={prod.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <ImageIcon size={16} className="text-zinc-700" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-white uppercase tracking-tight">{prod.name}</div>
+                                                    <div className="text-[10px] font-mono text-zinc-500">{prod.slug}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 font-mono text-white">
+                                            ৳{prod.price}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-full ${prod.stock_status ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                {prod.stock_status ? 'In Stock' : 'Out of Stock'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {prod.is_featured ? (
+                                                <span className="text-amber-500 text-[10px] font-bold uppercase tracking-widest">Featured</span>
+                                            ) : (
+                                                <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-3">
+                                                <button
+                                                    onClick={() => openEditForm(prod)}
+                                                    className="p-2 text-zinc-500 hover:text-white transition-colors"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setProductToDelete(prod.id)}
+                                                    className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Right Scroll Gradient / Button */}
+                {showRightScroll && (
+                    <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-black via-black/80 to-transparent z-20 flex items-center justify-end pointer-events-none md:hidden">
+                        <button
+                            onClick={() => scroll('right')}
+                            className="pointer-events-auto h-8 w-8 mr-2 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white hover:bg-zinc-800 transition-colors shadow-lg"
+                            aria-label="Scroll right"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {isFormOpen && (

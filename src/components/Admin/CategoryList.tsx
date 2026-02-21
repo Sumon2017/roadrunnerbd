@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Edit2, Trash2, Plus, GripVertical } from 'lucide-react';
+import { Edit2, Trash2, Plus, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import CategoryForm from './CategoryForm';
 
 const CategoryList: React.FC = () => {
@@ -15,6 +15,11 @@ const CategoryList: React.FC = () => {
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const pageSize = 10;
+
+    // Scroll state
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [showLeftScroll, setShowLeftScroll] = useState(false);
+    const [showRightScroll, setShowRightScroll] = useState(false);
 
     const fetchCategories = async () => {
         setLoading(true);
@@ -39,6 +44,26 @@ const CategoryList: React.FC = () => {
     useEffect(() => {
         fetchCategories();
     }, [page]);
+
+    // Scroll handlers
+    const handleScroll = () => {
+        if (!scrollContainerRef.current) return;
+        const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+        setShowLeftScroll(scrollLeft > 0);
+        setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 1);
+    };
+
+    useEffect(() => {
+        handleScroll();
+        window.addEventListener('resize', handleScroll);
+        return () => window.removeEventListener('resize', handleScroll);
+    }, [categories]);
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (!scrollContainerRef.current) return;
+        const scrollAmount = direction === 'left' ? -300 : 300;
+        scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    };
 
     const confirmDelete = async () => {
         if (!categoryToDelete) return;
@@ -93,62 +118,95 @@ const CategoryList: React.FC = () => {
                 </button>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden overflow-x-auto no-scrollbar">
-                <table className="w-full text-left min-w-[500px]">
-                    <thead className="bg-black/50 border-b border-zinc-800">
-                        <tr>
-                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Order</th>
-                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Name</th>
-                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Slug</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800 text-sm">
-                        {loading ? (
+            <div className="relative group">
+                {/* Left Scroll Gradient / Button */}
+                {showLeftScroll && (
+                    <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-black via-black/80 to-transparent z-20 flex items-center justify-start pointer-events-none md:hidden">
+                        <button
+                            onClick={() => scroll('left')}
+                            className="pointer-events-auto h-8 w-8 ml-2 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white hover:bg-zinc-800 transition-colors shadow-lg"
+                            aria-label="Scroll left"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                    </div>
+                )}
+
+                <div
+                    ref={scrollContainerRef}
+                    onScroll={handleScroll}
+                    className="bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden overflow-x-auto no-scrollbar relative z-10"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    <table className="w-full text-left min-w-[500px]">
+                        <thead className="bg-black/50 border-b border-zinc-800">
                             <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest animate-pulse">
-                                    Loading Categories...
-                                </td>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Order</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Name</th>
+                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Slug</th>
+                                <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Actions</th>
                             </tr>
-                        ) : categories.length === 0 ? (
-                            <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest">
-                                    No categories found. Start by adding one.
-                                </td>
-                            </tr>
-                        ) : (
-                            categories.map((cat) => (
-                                <tr key={cat.id} className="hover:bg-white/[0.02] transition-colors group">
-                                    <td className="px-6 py-4 font-mono text-zinc-400 group-hover:text-white transition-colors">
-                                        {cat.order_index}
-                                    </td>
-                                    <td className="px-6 py-4 font-bold text-white uppercase tracking-tight">
-                                        {cat.name}
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-xs text-zinc-500">
-                                        {cat.slug}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-3">
-                                            <button
-                                                onClick={() => openEditForm(cat)}
-                                                className="p-2 text-zinc-500 hover:text-white transition-colors"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => setCategoryToDelete(cat.id)}
-                                                className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800 text-sm">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest animate-pulse">
+                                        Loading Categories...
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : categories.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 uppercase tracking-widest">
+                                        No categories found. Start by adding one.
+                                    </td>
+                                </tr>
+                            ) : (
+                                categories.map((cat) => (
+                                    <tr key={cat.id} className="hover:bg-white/[0.02] transition-colors group">
+                                        <td className="px-6 py-4 font-mono text-zinc-400 group-hover:text-white transition-colors">
+                                            {cat.order_index}
+                                        </td>
+                                        <td className="px-6 py-4 font-bold text-white uppercase tracking-tight">
+                                            {cat.name}
+                                        </td>
+                                        <td className="px-6 py-4 font-mono text-xs text-zinc-500">
+                                            {cat.slug}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-3">
+                                                <button
+                                                    onClick={() => openEditForm(cat)}
+                                                    className="p-2 text-zinc-500 hover:text-white transition-colors"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setCategoryToDelete(cat.id)}
+                                                    className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Right Scroll Gradient / Button */}
+                {showRightScroll && (
+                    <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-black via-black/80 to-transparent z-20 flex items-center justify-end pointer-events-none md:hidden">
+                        <button
+                            onClick={() => scroll('right')}
+                            className="pointer-events-auto h-8 w-8 mr-2 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white hover:bg-zinc-800 transition-colors shadow-lg"
+                            aria-label="Scroll right"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {isFormOpen && (

@@ -61,21 +61,21 @@ export async function PATCH(req: NextRequest) {
         const { id, categories, ...productData } = body;
 
         if (!id) throw new Error('Product ID required');
-        
+
         // 0. Fetch existing product to compare images
         const { data: existingProduct, error: fetchError } = await supabaseAdmin
             .from('products')
             .select('images')
             .eq('id', id)
             .single();
-            
+
         if (fetchError) throw fetchError;
-        
+
         // Find images that were removed in the edit
         const oldImages = existingProduct?.images || [];
         const newImages = productData.images || [];
         const removedImages = oldImages.filter((img: string) => !newImages.includes(img));
-        
+
         // Delete removed images from R2
         for (const imgUrl of removedImages) {
             const key = extractR2Key(imgUrl);
@@ -90,6 +90,9 @@ export async function PATCH(req: NextRequest) {
                 }
             }
         }
+
+        // Add updated_at timestamp
+        productData.updated_at = new Date().toISOString();
 
         // 1. Update Product
         const { error: productError } = await supabaseAdmin
@@ -152,9 +155,9 @@ export async function DELETE(req: NextRequest) {
             .select('images')
             .eq('id', id)
             .single();
-            
+
         if (fetchError && fetchError.code !== 'PGRST116') {
-             throw fetchError;
+            throw fetchError;
         }
 
         // 1. Delete associated category relationships
@@ -177,7 +180,7 @@ export async function DELETE(req: NextRequest) {
         if (!deletedProduct || deletedProduct.length === 0) {
             throw new Error("Product not found or deletion blocked by RLS policies.");
         }
-        
+
         // 3. Delete all images from R2 associated with this product
         if (existingProduct && existingProduct.images) {
             for (const imgUrl of existingProduct.images) {

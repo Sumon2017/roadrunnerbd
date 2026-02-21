@@ -10,9 +10,9 @@ const CategoriesPage: React.FC = () => {
             <AdminSidebar active="categories" />
 
             <main className="flex-1 overflow-y-auto">
-                <header className="h-20 border-b border-zinc-800 flex items-center justify-between px-8">
-                    <h1 className="text-xl font-black uppercase tracking-tighter text-zinc-400">Dashboard / <span className="text-white">Categories</span></h1>
-                    <div className="flex items-center gap-4">
+                <header className="h-20 border-b border-zinc-800 flex items-center justify-between px-4 md:px-8 pl-16 md:pl-8">
+                    <h1 className="text-xl font-black uppercase tracking-tighter text-zinc-400 truncate">Dashboard / <span className="text-white">Categories</span></h1>
+                    <div className="flex items-center gap-4 hidden sm:flex">
                         <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 italic">Manage Groups</div>
                     </div>
                 </header>

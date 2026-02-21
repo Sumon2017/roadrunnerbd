@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "RoadRunnerBD | Premium Bike Accessories",
   description: "RoadRunnerBD is your premier destination for high-quality imported motorbike accessories in Bangladesh.",
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 import PageTransition from "@/components/PageTransition";
