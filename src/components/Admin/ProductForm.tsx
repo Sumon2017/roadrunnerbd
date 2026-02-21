@@ -75,13 +75,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSuccess }
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
+        const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+        const validFiles = Array.from(files).filter(file => {
+            if (file.size > MAX_FILE_SIZE) {
+                alert(`File ${file.name} is too large. Maximum size is 4MB.`);
+                return false;
+            }
+            return true;
+        });
+
+        if (validFiles.length === 0) {
+            e.target.value = '';
+            return;
+        }
+
         setUploading(true);
         const adminPass = localStorage.getItem('roadrunner_admin_pass') || '';
         const newImages = [...images];
 
-        for (let i = 0; i < files.length; i++) {
+        for (let i = 0; i < validFiles.length; i++) {
             const formData = new FormData();
-            formData.append('file', files[i]);
+            formData.append('file', validFiles[i]);
 
             try {
                 const response = await fetch('/api/admin/upload', {
@@ -95,7 +109,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSuccess }
                     newImages.push(data.url);
                 } else {
                     const data = await response.json();
-                    alert(`Failed to upload ${files[i].name}: ${data.error}`);
+                    alert(`Failed to upload ${validFiles[i].name}: ${data.error}`);
                 }
             } catch (error) {
                 console.error('Upload error:', error);
@@ -104,6 +118,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose, onSuccess }
 
         setImages(newImages);
         setUploading(false);
+        e.target.value = '';
     };
 
     const removeImage = (index: number) => {

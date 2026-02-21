@@ -5,8 +5,15 @@ import { ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 
 // Helper to extract the R2 key from the full public URL
 function extractR2Key(url: string): string | null {
-    if (!url || !url.startsWith(R2_PUBLIC_URL)) return null;
-    return url.replace(`${R2_PUBLIC_URL}/`, '');
+    if (!url) return null;
+    try {
+        const parsedUrl = new URL(url);
+        // Remove leading slash to match R2 keys (e.g. /products/file.jpg -> products/file.jpg)
+        return parsedUrl.pathname.substring(1);
+    } catch {
+        // Fallback for relative or malformed URLs
+        return url.replace(`${R2_PUBLIC_URL}/`, '');
+    }
 }
 
 export async function GET(req: NextRequest) {
@@ -32,12 +39,21 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // 2. Fetch all active image URLs from the database
-        const { data: products, error: dbError } = await supabaseAdmin
+        // 2. Fetch all active image URLs from the database (Products)
+        const { data: products, error: productsError } = await supabaseAdmin
             .from('products')
             .select('images');
 
-        if (dbError) throw dbError;
+        if (productsError) throw productsError;
+
+        // Fetch category images if they have media attached
+        const { data: categories, error: categoriesError } = await supabaseAdmin
+            .from('categories')
+            .select('image_url'); // Assume column might exist or will exist
+
+        if (categoriesError && categoriesError.code !== '42703') { // Ignore missing column error for now
+            throw categoriesError;
+        }
 
         // Flatten the images array and extract the raw R2 keys
         const activeKeys = new Set<string>();
@@ -45,6 +61,15 @@ export async function GET(req: NextRequest) {
             if (product.images && Array.isArray(product.images)) {
                 for (const imgUrl of product.images) {
                     const key = extractR2Key(imgUrl);
+                    if (key) activeKeys.add(key);
+                }
+            }
+        }
+
+        if (categories) {
+            for (const category of categories) {
+                if (category.image_url) {
+                    const key = extractR2Key(category.image_url);
                     if (key) activeKeys.add(key);
                 }
             }
