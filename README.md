@@ -27,6 +27,20 @@ This project is built with easy branding customization in mind. You can swap the
 
 The components in `src/components/Branding` will automatically detect these files and display them with a premium dark-mode aesthetic.
 
+## Cloudflare Image Cleanup Cron Job
+
+Orphaned images (uploaded during product creation but never saved) can be cleaned up automatically using a secret API route.
+You can trigger this route manually, or set it up via Vercel Cron or Upstash by passing your `CRON_SECRET`.
+
+To trigger manually via CLI:
+```bash
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://yourdomain.com/api/cron/cleanup-images
+```
+Or via URL explicitly:
+```bash
+curl "https://yourdomain.com/api/cron/cleanup-images?secret=YOUR_CRON_SECRET"
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
