@@ -41,9 +41,9 @@ const HeroBanner: React.FC<{ backgroundImage?: string }> = ({ backgroundImage })
                 <span className="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-widest text-zinc-400 uppercase border border-zinc-800 rounded-full">
                     New Arrival
                 </span>
-                <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none mb-6">
+                <h1 className="text-4xl md:text-6xl font-black text-white/70 tracking-tighter leading-none mb-6">
                     PREMIUM <br />
-                    <span className="text-zinc-600">BIKE ACCESSORIES</span>
+                    <span className="text-zinc-500/70">BIKE ACCESSORIES</span>
                 </h1>
 
                 <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
