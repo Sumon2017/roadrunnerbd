@@ -46,7 +46,7 @@ const HeroBanner: React.FC<{ backgroundImage?: string }> = ({ backgroundImage })
                     <span className="text-zinc-500/70">BIKE ACCESSORIES</span>
                 </h1>
 
-                <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <div className="flex flex-col md:flex-row gap-4 justify-center items-center mt-48 md:mt-0">
                     <button
                         onClick={() => {
                             const storeSection = document.getElementById('store');
